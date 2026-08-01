@@ -1,28 +1,27 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
-<title>CHÔMAGE FIT</title>
-<meta name="theme-color" content="#0a0a0a">
-<link rel="manifest" href="manifest.json">
-<link rel="icon" href="icon-192.png">
-<link rel="apple-touch-icon" href="icon-192.png">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<style>
-  :root{
-    --bg:#0a0a0a;
-    --bg2:#131313;
-    --card:#171717;
-    --card-border:#2a2a2a;
-    --lime:#d4ff3d;
-    --lime-dim:#8ea82a;
-    --red:#ff4d4d;
-    --text:#f2f2f0;
-    --text-dim:#8a8a86;
-    --mono: ui-monospace, "SF Mono", "Roboto Mono", Menlo, Consolas, monospace;
-    --sans: -apple-system, "Segoe UI", system-ui, sans-serif;
+const CACHE = 'chomage-fit-v2';
+const FILES = ['./index.html', './manifest.json', './icon-192.png', './icon-512.png'];
+
+self.addEventListener('install', e => {
+  e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES)));
+  self.skipWaiting();
+});
+
+self.addEventListener('activate', e => {
+  e.waitUntil(
+    caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k))))
+  );
+  self.clients.claim();
+});
+
+self.addEventListener('fetch', e => {
+  e.respondWith(
+    caches.match(e.request).then(cached => cached || fetch(e.request).then(res => {
+      const resClone = res.clone();
+      caches.open(CACHE).then(c => c.put(e.request, resClone));
+      return res;
+    }).catch(() => cached))
+  );
+});
   }
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
   html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:var(--sans);}
